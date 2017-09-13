@@ -4,6 +4,7 @@ module Database =
     open System.Data
 
     type ColumnAttributes =
+        | PrimaryKey
         | Nullable
         | NotNullable
     type Column =
