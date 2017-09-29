@@ -3,12 +3,26 @@ namespace OffWidth.Core
 module Database =
     open System.Data
 
-    type ColumnAttributes =
+    type ColumnAttribute =
         | PrimaryKey
-        | Nullable
-        | NotNullable
+
+    [<RequireQualifiedAccess>]
+    type Data =
+        | String of int
+        | Int16
+        | Int32
+        | Int64
+        | Float
+        | Double
+        | Date
+        | Time
+        | DateTime
+        | Boolean
+
     type Column =
-        | Column of string * DbType * (ColumnAttributes list)
-        | ReferenceColumn of Column * Column
-    type Table = Table of string * (Column list)
-    type Schema = Schema of string * (Table list)
+        { Schema: string
+          Table: string
+          Name: string
+          DataType: Data
+          Nullable: bool
+          Attributes: ColumnAttribute list }

@@ -31,51 +31,38 @@ module Postgres =
             ColumnName: string
             ColumnType: string
             DefaultValue: string
-            IsNullable: string
+            IsNullable: bool
             CharacterMaxLength: int
         }
 
         let toDbType t =
-            match t with
-            | "int2" -> DbType.Int16
-            | "int4" -> DbType.Int32
-            | "int8" -> DbType.Int64
-            | "bool" -> DbType.Boolean
-            | "float4" -> DbType.Single
-            | "float8" -> DbType.Double
-            | "numeric" -> DbType.VarNumeric
-            | "money" -> DbType.Currency
-            | "text" -> DbType.String
-            | "date" -> DbType.Date
-            | "timestamp" -> DbType.DateTime
-            | "time" -> DbType.Time
-            | x -> failwith (sprintf "Cannot infer DbType from %s" x)
+            match t.ColumnType with
+            | "int2" -> Data.Int16
+            | "int4" -> Data.Int32
+            | "int8" -> Data.Int64
+            | "bool" -> Data.Boolean
+            | "float4" -> Data.Float
+            | "float8" -> Data.Double
+            | "numeric" -> Data.Double
+            | "money" -> Data.Double
+            | "text" -> Data.String t.CharacterMaxLength
+            | "date" -> Data.Date
+            | "timestamp" -> Data.DateTime
+            | "time" -> Data.Time
+            | x -> failwith (sprintf "Cannot infer data type from %s" x)
+
+        let toDefinition x =
+            { Schema = x.SchemaName
+              Table = x.TableName
+              Name = x.ColumnName
+              DataType = x |> toDbType
+              Nullable = x.IsNullable
+              Attributes = [] }
 
         let inspectDatabase connStr =
-            let columnInspector info =
-                Column (info.ColumnName, toDbType (info.ColumnType), [])
-
-            let inspectColumns infos =
-                infos
-                |> Seq.map columnInspector
-                |> Seq.toList
-
-            let tableMaker (tableName, info) =
-                Table (tableName, inspectColumns info)
-
-            let inspectTables schema info =
-                info
-                |> Seq.groupBy (fun x -> x.TableName)
-                |> Seq.map tableMaker
-                |> Seq.toList
-
-            let schemaMaker (schemaName, info) =
-                Schema (schemaName, inspectTables schemaName info)
-
             use conn = new NpgsqlConnection(connStr)
             conn.Query<DbInfo>(infoQuery)
-            |> Seq.groupBy (fun x -> x.SchemaName)
-            |> Seq.map schemaMaker
+            |> Seq.map toDefinition
 
     let inspector connStr =
         Internals.inspectDatabase connStr
