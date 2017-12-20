@@ -1,8 +1,6 @@
 namespace OffWidth.Core
 
 module Database =
-    open System.Data
-
     type ColumnAttribute =
         | PrimaryKey
 
