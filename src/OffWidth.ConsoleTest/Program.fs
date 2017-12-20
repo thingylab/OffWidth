@@ -9,12 +9,6 @@ open OffWidth.Postgres
 let main argv =
     let connStr = "Host=localhost;Username=test;Password=test;Database=test"
 
-    try
-        let res = inspector connStr
-
-        for item in res do
-            printfn "%O" item
-    with
-    | x -> printfn "%O" x
+    
 
     0 // return an integer exit code

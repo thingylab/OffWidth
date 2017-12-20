@@ -1,7 +1,8 @@
 namespace OffWidth
 
 module Postgres =
-    module private Internals =
+    ()
+(*     module private Internals =
         open System.Data
         open Dapper
         open Npgsql
@@ -65,4 +66,4 @@ module Postgres =
             |> Seq.map toDefinition
 
     let inspector connStr =
-        Internals.inspectDatabase connStr
+        Internals.inspectDatabase connStr *)

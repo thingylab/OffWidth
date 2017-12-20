@@ -1,6 +1,6 @@
-namespace OffWidth
+namespace OffWidth.Core
 
-module Core =
+module Configuration =
     type Database = {
         Name: string
         ConnectionString: string

@@ -3,7 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Database.fs" />
+    <Compile Include="Discovery.fs" />
     <Compile Include="Config.fs" />
   </ItemGroup>
 </Project>
