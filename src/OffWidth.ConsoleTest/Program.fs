@@ -11,17 +11,17 @@ type DataItem =
 type DataPlan = DataPlan of DataItem list
 
 type PlanBuilder() =
-    member x.Yield (()) = DataPlan []
+    member __.Yield () = DataPlan []
 
     [<CustomOperation("insertInto")>]
-    member x.insertInto (DataPlan items, table: obj) =
+    member __.InsertInto (DataPlan items, table: obj) =
         DataPlan [
             yield! items
             yield InsertToTable(table)
         ]
 
     [<CustomOperation("insertIntoWithStuff")>]
-    member x.InsertInto (DataPlan items, table: obj, otherStuff: string) =
+    member __.InsertInto (DataPlan items, table: obj, otherStuff: string) =
         DataPlan [
             yield! items
             yield InsertToTable(sprintf "%O%s" obj otherStuff)
