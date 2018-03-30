@@ -1,43 +1,44 @@
-﻿// Learn more about F# at http://fsharp.org
+﻿// Descriptive type
+type Table<'T> =
+    | Table of 'T
 
-open System
-open System.IO
-open OffWidth
-open OffWidth.Postgres
+type DbType =
+    | Integer
+    | Float
+    | String of int
+    | Date
+    | DateTime
 
+type Column<'TColumn, 'TTable> =
+    | Column of Table<'TTable> * DbType * 'TColumn
 
-type DataItem =
-    | InsertToTable of obj
-type DataPlan = DataPlan of DataItem list
+type ForeignKey<'TColumn, 'TTable> =
+    | ForeignKey of Column<'TColumn, 'TTable> * Column<'TColumn, 'TTable>
 
-type PlanBuilder() =
-    member __.Yield () = DataPlan []
+type DbDescription<'TColumn, 'TTable> = {
+    Columns: Column<'TColumn, 'TTable> list
+    ForeignKey: ForeignKey<'TColumn, 'TTable> list
+}
 
-    [<CustomOperation("insertInto")>]
-    member __.InsertInto (DataPlan items, table: obj) =
-        DataPlan [
-            yield! items
-            yield InsertToTable(table)
-        ]
+// Operation/Action types
+type DbOperation<'TTable> =
+    | RowInsert of Table<'TTable>
+    // At some point: | RowLookup
 
-    [<CustomOperation("insertIntoWithStuff")>]
-    member __.InsertInto (DataPlan items, table: obj, otherStuff: string) =
-        DataPlan [
-            yield! items
-            yield InsertToTable(sprintf "%O%s" obj otherStuff)
-        ]
+////////////////////////////////////////////////////////
+// Just examples
+type MyTables = TableOne | TableTwo
+let tableOne, tableTwo = Table TableOne, Table TableTwo
+let myDb = {
+    Columns =
+        [ Column (tableOne, Integer, "id")
+          Column (tableOne, String 255, "name")
+          Column (tableTwo, Integer, "id")
+          Column (tableTwo, Integer, "city") ]
+    ForeignKey = []
+}
+////////////////////////////////////////////////////////
 
-let builder = PlanBuilder()
-
-type Tables =
-| Table1
-
-let blah =
-    builder {
-        insertInto Table1
-        insertInto "plop"
-        insertIntoWithStuff "3rd" "otherStuff"
-    }
 
 
 [<EntryPoint>]
