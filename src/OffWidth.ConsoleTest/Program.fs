@@ -15,7 +15,6 @@ type Column<'TColumn, 'TTable> =
 // Generated 'value' from a given column
 type ColumnValue =
     | Value of obj
-    | FetchRandomly
     | Generate of Gen<obj>
 
 ////////////////////////////////////////////////////////
@@ -41,6 +40,11 @@ let columnsOfTable schema table =
     schema
     |> List.filter (belongsToTable table)
 
+let resolveValue v size =
+    match v with
+    | Value _ as value -> Seq.init size (fun _ -> value)
+    | Generate _ -> Seq.init size (fun _ -> Value 0) // Fix Me
+
 let generate schema size table accept =
     let columns = columnsOfTable schema table
 
@@ -58,7 +62,7 @@ let tableOneGenerator =
 
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     printfn "Hello, world!"
 
     let sample = tableOneGenerator |> Gen.sample 0 10
