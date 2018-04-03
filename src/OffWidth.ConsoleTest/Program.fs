@@ -1,7 +1,6 @@
-﻿// Descriptive type
-type Table<'T> =
-    | Table of 'T
+﻿open FsCheck
 
+// Schema description
 type DbType =
     | Integer
     | Float
@@ -10,44 +9,60 @@ type DbType =
     | DateTime
 
 type Column<'TColumn, 'TTable> =
-    | Column of Table<'TTable> * DbType * 'TColumn
+    | Column of 'TTable * 'TColumn * DbType
+    | ForeignKey of 'TTable * 'TColumn * Column<'TColumn, 'TTable>
 
-type ForeignKey<'TColumn, 'TTable> =
-    | ForeignKey of Column<'TColumn, 'TTable> * Column<'TColumn, 'TTable>
-
-type DbDescription<'TColumn, 'TTable> = {
-    Columns: Column<'TColumn, 'TTable> list
-    ForeignKey: ForeignKey<'TColumn, 'TTable> list
-}
-
-// Operation/Action types
-type DbOperation<'TTable> =
-    | RowInsert of Table<'TTable>
-    // At some point: | RowLookup
+// Generated 'value' from a given column
+type ColumnValue =
+    | Value of obj
+    | FetchRandomly
+    | Generate of Gen<obj>
 
 ////////////////////////////////////////////////////////
 // Just examples
 type MyTables = TableOne | TableTwo
-let tableOne, tableTwo = Table TableOne, Table TableTwo
 let myDb = {
     Columns =
-        [ Column (tableOne, Integer, "id")
-          Column (tableOne, String 255, "name")
-          Column (tableTwo, Integer, "id")
-          Column (tableTwo, Integer, "city") ]
-    ForeignKey = []
+        [ Column (TableOne, Integer, "id")
+          Column (TableOne, String 255, "first-name")
+          Column (TableOne, String 255, "last-name")
+          Column (TableTwo, Integer, "id")
+          Column (TableTwo, Integer, "city") ]
+    ForeignKeys = []
 }
 ////////////////////////////////////////////////////////
 
+let belongsToTable column table =
+    match column with
+    | Column (t, _, _) -> t = table
+    | ForeignKey (t, _, _) -> t = table
+
+let columnsOfTable schema table =
+    schema
+    |> List.filter (belongsToTable table)
+
+let generate schema size table accept =
+    let columns = columnsOfTable schema table
+
+    [ for i in 1..size do
+        yield List.map accept columns ]
+
+// What I want to be able to write:
+let tableOneGenerator =
+    let firstNames = ["Pierre"; "Paul"; "Jacques"; "John"; "Bob"]
+    gen {
+        let! idx = Gen.choose (0, 4)
+
+        return [ "first-name", Value firstNames.[idx]] |> Map.ofList
+    }
 
 
 [<EntryPoint>]
 let main argv =
-    let connStr = "Host=localhost;Username=test;Password=test;Database=test"
+    printfn "Hello, world!"
 
-    let plan =
-        withContext someContext {
-            insertInto ""
-        }
+    let sample = tableOneGenerator |> Gen.sample 0 10
+
+    printfn "%A" sample
 
     0 // return an integer exit code
