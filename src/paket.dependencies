@@ -2,6 +2,7 @@ source https://www.nuget.org/api/v2
 
 nuget npgsql
 nuget Dapper
+nuget Chessie
 
 nuget FsCheck.Xunit
 nuget xUnit
