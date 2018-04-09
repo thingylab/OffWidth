@@ -3,6 +3,7 @@ source https://www.nuget.org/api/v2
 nuget npgsql
 nuget Dapper
 nuget Chessie
+nuget Humanizer
 
 nuget FsCheck.Xunit
 nuget xUnit

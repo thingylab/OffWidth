@@ -1,0 +1,7 @@
+#load "FsCheck.csx" 
+#load "NETStandard.Library.csx" 
+#load "System.ValueTuple.csx" 
+#load "xunit.abstractions.csx" 
+#load "xunit.core.csx" 
+#load "xunit.extensibility.execution.csx" 
+#r "../../../packages/FsCheck.Xunit/lib/netstandard1.6/FsCheck.Xunit.dll" 

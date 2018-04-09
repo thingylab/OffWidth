@@ -1,5 +1,14 @@
-﻿open FsCheck
+﻿#load @"C:/dev/OffWidth/src/.paket/load/netstandard2.0/Chessie.fsx"
+#load @"C:/dev/OffWidth/src/.paket/load/netstandard2.0/Humanizer.Core.fsx"
+#load @"C:/dev/OffWidth/src/.paket/load/netstandard2.0/FsCheck.fsx"
+
+
+open Microsoft.FSharp.Reflection
+open FsCheck
 open Chessie.ErrorHandling
+open Humanizer
+open System
+open System.Reflection
 
 // Schema description
 type DbType =
@@ -9,92 +18,125 @@ type DbType =
     | Date
     | DateTime
 
-type Column<'TColumn, 'TTable>
-    when 'TColumn: comparison
-     and 'TTable: comparison =
-    | Column of 'TTable * 'TColumn * DbType
-    | ForeignKey of 'TTable * 'TColumn * Column<'TColumn, 'TTable>
+type Table = Table of string
 
-type DataGenerationStrategy =
-    | Constant of obj
-    | Function of (int -> obj)
-    | Generator of Gen<obj>
+type Column =
+    | Column of string * DbType
+    | ForeignKey of string * Table * Column
 
-type ForeignKeyGenerationStrategy =
-    | CreateRecord
-    | FetchRandomly
+type NamingStyle =
+    | TitleCase
+    | PascalCase
+    | CamelCase
+    | SnakeCase
+    | KebabCase
 
-type DatabaseOperation<'TColumn, 'TTable>
-    when 'TColumn: comparison
-     and 'TTable: comparison =
-    | InsertRow of Map<'TColumn, 'TTable>
+// This will be useful later
+type Session =
+    { Schema: (Table * Column) list
+      ColumnNamingStyle: NamingStyle }
+
+// This should prob be private
+type DatabaseOperation<'TColumn>
+    when 'TColumn: comparison =
+    | InsertRow of Table * Map<'TColumn, obj>
 
 ////////////////////////////////////////////////////////
-// Just examples
+// Examples
 type MyTables = TableOne | TableTwo
-//let myDb = {
-//    Columns =
-//        [ Column (TableOne, Integer, "id")
-//          Column (TableOne, String 255, "first-name")
-//          Column (TableOne, String 255, "last-name")
-//          Column (TableTwo, Integer, "id")
-//          Column (TableTwo, Integer, "city") ]
-//    ForeignKeys = []
-//}
+let mySchema = 
+        [ Table "One", Column ("id", Integer)
+          Table "One", Column ("first-name", String 255)
+          Table "One", Column ("last-name", String 255)
+          Table "Two", Column ("id", Integer)
+          Table "Two", Column ("city", Integer) ]
 ////////////////////////////////////////////////////////
 
-let belongsToTable column table =
-    match column with
-    | Column (t, _, _) -> t = table
-    | ForeignKey (t, _, _) -> t = table
+type RowGenerator =
+    | Function of (int -> obj)
+    | Gen of Gen<obj>
 
-let columnsOfTable schema table =
-    let separate (dataCols, fks) c =
+type GeneratedObjectPropertyDescriptor =
+    { PropertyName: string
+      InferredColumnName: string
+      GetMethod: MethodInfo }
+
+let getPropertyDescriptors inflector o =
+    let buildDescriptor (p: PropertyInfo) =
+        { PropertyName = p.Name
+          InferredColumnName = inflector p.Name
+          GetMethod = p.GetMethod }
+
+    FSharpType.GetRecordFields (o.GetType())
+    |> Array.map buildDescriptor
+    |> Array.map (fun x -> x.InferredColumnName, x)
+    |> Map.ofArray
+
+// TODO: 
+//  - manage non explicitly generated columns with defaults
+//  - make generator a RowGenerator
+//  - use trial
+let generate session table size (generator: int -> obj) =
+    let expectedCols = 
+        session.Schema
+        |> List.filter (fun (t, _) -> t = table)
+        |> List.map snd
+
+    // Get list of explicitly generated columns
+    let firstRow = generator 0
+    let generatedType = firstRow.GetType()
+
+    if not <| FSharpType.IsRecord generatedType then failwith "generator does not return a record type"
+
+    let descriptors = 
+        getPropertyDescriptors (Humanizer.InflectorExtensions.Kebaberize >> Humanizer.InflectorExtensions.Pluralize) firstRow
+
+    let toName c =
         match c with
-        | Column _ as col -> (col :: dataCols), fks
-        | ForeignKey _ as fk -> dataCols, (fk :: fks)
+        | Column (n, _) -> n
+        | ForeignKey (n, _, _) -> n
 
-    schema
-    |> List.filter (belongsToTable table)
-    |> List.fold separate ([], [])
+    let missingColumns = 
+        expectedCols
+        |> List.map toName
+        |> List.filter (fun x -> not <| Map.containsKey x descriptors)
 
-let resolveRelations fks = []
-
-let resolveDataColumns size cols =
-    let generateValues size strategy =
-        match strategy with
-        | Constant v -> List.init size (fun _ -> v)
-        | Function f -> List.init size f
-        | Generator gen -> Gen.sample 0 size gen
-
-    cols
-    |> List.map 
-
-    []
-
-let generate schema size table accept =
-    let columns = columnsOfTable schema table
-
-    let acceptedCols, acceptedRelations = accept columns
-
-    resolveRelations acceptedRelations ++ (resolveDataColumns size acceptedCols)
+    [0..size]
+    |> List.map generator
 
 
-// What I want to be able to write:
-let tableOneGenerator =
-    let firstNames = ["Pierre"; "Paul"; "Jacques"; "John"; "Bob"]
-    gen {
-        let! idx = Gen.choose (0, 4)
+    // Generate values
+    // Return a collection of DatabaseOperations
 
-        return [ "first-name", Value firstNames.[idx]] |> Map.ofList
-    }
+// Testing
+let session = 
+    { Schema = mySchema
+      ColumnNamingStyle = KebabCase }
+
+type MyRow =
+    { FirstName: string
+      LastName: string }
+
+let myGenerator n = 
+    { FirstName = sprintf "First Name %i" n
+      LastName = sprintf "Last Name %i" n } :> obj
+
+generate session (Table "One") 10 myGenerator
+
+
+
+type TestType = {NameBlah: string}
+let props = FSharpType.GetRecordFields(typeof<TestType>)
+let prop = props.[0]
+prop.GetMethod.Invoke({NameBlah = "My Name Is Blah"}, Array.empty)
+
 
 [<EntryPoint>]
 let main _ =
     printfn "Hello, world!"
 
-    let sample = tableOneGenerator |> Gen.sample 0 10
-
-    printfn "%A" sample
+    printfn "%A" (Humanizer.InflectorExtensions.Kebaberize("HelloWorld"))
+    
+    System.Console.ReadLine()
 
     0 // return an integer exit code
