@@ -36,9 +36,9 @@ let myGenerator n =
 
 [<EntryPoint>]
 let main _ =
-    let stuff = generate session (Table "One") 5 myGenerator
+    let stuff = generate session (Table "One") 5 (Function myGenerator)
     printfn "%A" stuff
 
-    System.Console.ReadLine()
+    System.Console.ReadLine() |> ignore
 
     0

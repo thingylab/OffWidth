@@ -3,6 +3,7 @@ namespace OffWidth
 open System.Reflection
 open Chessie.ErrorHandling
 open Microsoft.FSharp.Reflection
+open RowGenerator
 open Session
 open Utils
 
@@ -30,14 +31,15 @@ module Generate =
         |> Map.map (fun _ d -> d.GetMethod.Invoke(o, Array.empty))
 
     // TODO: 
-    //  - make generator a RowGenerator
     //  - manage non explicitly generated columns with defaults
     //  - Return DbOperations
     //  - Handle relationships
     //  - Handle nullable cols with options
-    let generate session table size (generator: int -> obj) =
+    let generate session table size generator =
         let expectedCols = columns session table
-        let firstRow = generator 0
+        let firstRow = 
+            buildRows generator 1
+            |> List.item 0
 
         trial {
             do! validateType (firstRow.GetType())
@@ -53,8 +55,7 @@ module Generate =
                 |> List.filter (fun x -> not <| Map.containsKey x descriptors)
 
             return 
-                [0..size]
-                |> List.map generator
+                buildRows generator size
                 |> List.map (objectToMap descriptors)
         }
 

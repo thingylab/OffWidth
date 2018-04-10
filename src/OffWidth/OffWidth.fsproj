@@ -6,7 +6,10 @@
     <ProjectReference Include="..\OffWidth.Core\OffWidth.Core.fsproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Types.fs" />
     <Compile Include="Utils.fs" />
+    <Compile Include="RowGenerator.fs" />
+    <Compile Include="Session.fs" />
     <Compile Include="Generate.fs" />
   </ItemGroup>
 </Project>
