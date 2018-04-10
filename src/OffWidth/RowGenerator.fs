@@ -3,7 +3,7 @@
 open FsCheck
 
 module RowGenerator =
-    let buildRows generator size =
+    let buildValues size generator =
         match generator with
         | Function f -> 
             [0..size]

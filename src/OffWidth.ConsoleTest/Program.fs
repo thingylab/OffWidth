@@ -22,9 +22,16 @@ let mySchema =
           Table "Two", Column ("id", Integer)
           Table "Two", Column ("city", Integer) ]
 
+let myStrategy =
+    { DefaultStrategy.empty 
+        with ByColumnName = Map.ofList 
+                                [ "first-name", Function (fun n -> sprintf "-> %i" n :> obj) ;
+                                  "id", Function (fun n -> n :> obj) ] }
+
 let session = 
     { Schema = mySchema
-      ColumnNamingStyle = KebabCase }
+      ColumnNamingStyle = KebabCase
+      DefaultStrategies = myStrategy }
 
 type MyRowForTableOne =
     { FirstName: string
@@ -36,8 +43,8 @@ let myGenerator n =
 
 [<EntryPoint>]
 let main _ =
-    let stuff = generate session (Table "One") 5 (Function myGenerator)
-    printfn "%A" stuff
+    let res = ApplyDefaults.applyDefaults myStrategy (List.take 2 mySchema |> List.map snd) 1
+    printfn "%A" res
 
     System.Console.ReadLine() |> ignore
 

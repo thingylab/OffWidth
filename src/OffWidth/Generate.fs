@@ -38,7 +38,7 @@ module Generate =
     let generate session table size generator =
         let expectedCols = columns session table
         let firstRow = 
-            buildRows generator 1
+            buildValues 1 generator
             |> List.item 0
 
         trial {
@@ -55,7 +55,7 @@ module Generate =
                 |> List.filter (fun x -> not <| Map.containsKey x descriptors)
 
             return 
-                buildRows generator size
+                buildValues size generator
                 |> List.map (objectToMap descriptors)
         }
 

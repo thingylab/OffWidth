@@ -7,4 +7,7 @@ module Column =
         | ForeignKey (n, _, _) -> n
         | AutoIncrement n -> n
 
-
+    let dbType c = 
+        match c with
+        | Column (_, t) -> t
+        | _ -> Integer
