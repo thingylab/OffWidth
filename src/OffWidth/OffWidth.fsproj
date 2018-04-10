@@ -6,9 +6,7 @@
     <ProjectReference Include="..\OffWidth.Core\OffWidth.Core.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Types.fs" />
-    <Compile Include="Discovery.fs" />
-    <Compile Include="Globals.fs" />
-    <Compile Include="Builder.fs" />
+    <Compile Include="Utils.fs" />
+    <Compile Include="Generate.fs" />
   </ItemGroup>
 </Project>
